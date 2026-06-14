@@ -4,7 +4,7 @@ Solver for Sudoky
 
 ## Does is solve all sudokus?
 
-No, but it solves most. At least it solves more than I.
+No, but it solves most. At least it solves more than I can do.
 
 ## Where to start?
 
