@@ -1,10 +1,11 @@
 import csv
 from itertools import chain
 
-from solver import DEFAULT_LIST_PATH, print_puzzle_9x9, puzzle_grid_to_string, puzzle_string_to_grid, solve_puzzle_grid
+from solver import get_dataset_path, print_puzzle_9x9, puzzle_grid_to_string, puzzle_string_to_grid, solve_puzzle_grid
 
 
-def print_first_unsolved(list_path=DEFAULT_LIST_PATH, report_every=100):
+def print_first_unsolved(list_path=None, report_every=100):
+	list_path = list_path or get_dataset_path()
 	with open(list_path, "r", newline="") as file:
 		reader = csv.reader(file)
 		first_row = next(reader, None)

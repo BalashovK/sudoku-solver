@@ -1,7 +1,10 @@
 import csv
+import os
+
 import numpy as np
 
-DEFAULT_LIST_PATH = r"C:\Users\<your_user_name>\.cache\kagglehub\datasets\rohanrao\sudoku\versions\1\sudoku.csv"
+DEFAULT_LIST_PATH = r"C:\Users\cotty_d\.cache\kagglehub\datasets\rohanrao\sudoku\versions\1\sudoku.csv"
+DATA_CONFIG_PATH = "data.config"
 
 
 def read_puzzle_from_csv(file_path, line_number):
@@ -11,6 +14,16 @@ def read_puzzle_from_csv(file_path, line_number):
             if i == line_number:
                 return row[0]
     return None
+
+
+def get_dataset_path(config_path=DATA_CONFIG_PATH):
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as file:
+            for line in file:
+                candidate = line.strip()
+                if candidate:
+                    return candidate
+    return DEFAULT_LIST_PATH
 
 
 def print_puzzle_9x9(puzzle):
@@ -74,76 +87,75 @@ def build_dof(puzzle):
     return dof
 
 
+def method_1(puzzle, dof, dof_collapsed):
+    indices = np.argwhere((dof_collapsed == 8) & (puzzle == 0))
+    if len(indices) == 0:
+        return puzzle, dof, dof_collapsed, False
+
+    row, col = indices[0]
+    z_candidates = np.where(dof[:, row, col] == 0)[0]
+    if len(z_candidates) == 0:
+        return puzzle, dof, dof_collapsed, False
+
+    value = int(z_candidates[0] + 1)
+    puzzle[row, col] = value
+    dof = fill_dof(dof, row, col, value)
+    dof_collapsed = np.count_nonzero(dof, axis=0)
+    return puzzle, dof, dof_collapsed, True
+
+
+def method_2(puzzle, dof, dof_collapsed):
+    for z in range(9):
+        dof_plane = dof[z].copy()
+        dof_plane[puzzle != 0] += 1
+
+        for row in range(9):
+            zero_indices = np.where(dof_plane[row, :] == 0)[0]
+            if len(zero_indices) == 1:
+                col = zero_indices[0]
+                value = int(z + 1)
+                puzzle[row, col] = value
+                dof = fill_dof(dof, row, col, value)
+                dof_collapsed = np.count_nonzero(dof, axis=0)
+                return puzzle, dof, dof_collapsed, True
+
+        for col in range(9):
+            zero_indices = np.where(dof_plane[:, col] == 0)[0]
+            if len(zero_indices) == 1:
+                row = zero_indices[0]
+                value = int(z + 1)
+                puzzle[row, col] = value
+                dof = fill_dof(dof, row, col, value)
+                dof_collapsed = np.count_nonzero(dof, axis=0)
+                return puzzle, dof, dof_collapsed, True
+
+        for box_row in range(3):
+            for box_col in range(3):
+                zero_indices = np.where(dof_plane[box_row * 3:(box_row + 1) * 3, box_col * 3:(box_col + 1) * 3] == 0)
+                if len(zero_indices[0]) == 1:
+                    row = zero_indices[0][0] + box_row * 3
+                    col = zero_indices[1][0] + box_col * 3
+                    value = int(z + 1)
+                    puzzle[row, col] = value
+                    dof = fill_dof(dof, row, col, value)
+                    dof_collapsed = np.count_nonzero(dof, axis=0)
+                    return puzzle, dof, dof_collapsed, True
+
+    return puzzle, dof, dof_collapsed, False
+
+
 def solve_puzzle_grid(puzzle):
     puzzle = np.array(puzzle, dtype=int).copy()
     dof = build_dof(puzzle)
     dof_collapsed = np.count_nonzero(dof, axis=0)
 
-    have_progress=True
+    have_progress = True
     while have_progress:
         have_progress = False
-        # method #1
-        indices = np.argwhere((dof_collapsed == 8) & (puzzle == 0))
-        if len(indices) > 0:
 
-            row, col = indices[0]
-            z_candidates = np.where(dof[:, row, col] == 0)[0]
-
-            value = int(z_candidates[0] + 1)
-            puzzle[row, col] = value
-            #print(f"Filled {value} at ({row}, {col}) using method 1")
-            dof = fill_dof(dof, row, col, value)
-            dof_collapsed = np.count_nonzero(dof, axis=0)
-            have_progress = True
-        else:
-            # method 2
-            # iterate through Z planes
-            for z in range(9):
-                # make a copy of the current Z plane of DOF
-                dof_plane = dof[z].copy()
-                # increment the dof_plane wherever the puzzle has a non-zero value (since those are not candidates)
-                dof_plane[puzzle != 0] += 1
-
-                # iterate through rows
-                for row in range(9):
-                    # find number of lelements with value 0
-                    zero_indices = np.where(dof_plane[row, :] == 0)[0]
-                    if len(zero_indices) == 1:
-                        col = zero_indices[0]
-                        value = int(z + 1)
-                        puzzle[row, col] = value
-                        #print(f"Filled {value} at ({row}, {col}) using method 2 (row)")
-                        dof = fill_dof(dof, row, col, value)
-                        dof_collapsed = np.count_nonzero(dof, axis=0)
-                        have_progress = True
-                        break
-                for columns in range(9):
-                    zero_indices = np.where(dof_plane[:, columns] == 0)[0]
-                    if len(zero_indices) == 1:
-                        row = zero_indices[0]
-                        value = int(z + 1)
-                        puzzle[row, columns] = value
-                        #print(f"Filled {value} at ({row}, {columns}) using method 2 (column)")
-                        dof = fill_dof(dof, row, columns, value)
-                        dof_collapsed = np.count_nonzero(dof, axis=0)
-                        have_progress = True
-                        break
-                # for all 9 boxes
-                for box_row in range(3):
-                    for box_col in range(3):
-                        zero_indices = np.where(dof_plane[box_row * 3:(box_row + 1) * 3, box_col * 3:(box_col + 1) * 3] == 0)
-                        if len(zero_indices[0]) == 1:
-                            row = zero_indices[0][0] + box_row * 3
-                            col = zero_indices[1][0] + box_col * 3
-                            value = int(z + 1)
-                            puzzle[row, col] = value
-                            #print(f"Filled {value} at ({row}, {col}) using method 2 (box)")
-                            dof = fill_dof(dof, row, col, value)
-                            dof_collapsed = np.count_nonzero(dof, axis=0)
-                            have_progress = True
-                            break
-        if not have_progress:# or np.count_nonzero(puzzle == 0) == 0:
-            break
+        puzzle, dof, dof_collapsed, have_progress = method_1(puzzle, dof, dof_collapsed)
+        if not have_progress:
+            puzzle, dof, dof_collapsed, have_progress = method_2(puzzle, dof, dof_collapsed)
 
     solved = not np.any(puzzle == 0)
     return puzzle, solved, dof_collapsed

@@ -18,9 +18,7 @@ in solver.py
 
 ## What are the other files?
 
-kaggle_dl.py downloads 9 million sudoku from kaggle
-
-you need to update DEFAULT_LIST_PATH in solver to use it (sorry, I was too lazy to ask Copilot to connect the dots)
+kaggle_dl.py downloads 9 million sudoku from kaggle and saves path to data.config
 
 solve_all.py tries to solve them all
 

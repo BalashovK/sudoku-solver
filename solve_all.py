@@ -1,10 +1,11 @@
 import csv
 from itertools import chain
 
-from solver import DEFAULT_LIST_PATH, solve_puzzle_string
+from solver import get_dataset_path, solve_puzzle_string
 
 
-def solve_all(list_path=DEFAULT_LIST_PATH, report_every=100):
+def solve_all(list_path=None, report_every=100):
+	list_path = list_path or get_dataset_path()
 	solved_count = 0
 	unsolved_count = 0
 	processed_count = 0

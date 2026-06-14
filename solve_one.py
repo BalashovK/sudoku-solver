@@ -3,7 +3,7 @@ from pathlib import Path
 from solver import print_puzzle_9x9, puzzle_string_to_grid, solve_puzzle_string
 
 
-file_to_solve = "puzzles/3.txt"
+file_to_solve = "puzzles/4.txt"
 
 
 def load_puzzle(file_path):
