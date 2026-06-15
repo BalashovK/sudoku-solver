@@ -21,8 +21,17 @@ def get_dataset_path(config_path=DATA_CONFIG_PATH):
         with open(config_path, "r", encoding="utf-8") as file:
             for line in file:
                 candidate = line.strip()
-                if candidate:
+                if not candidate:
+                    continue
+
+                if os.path.isfile(candidate):
                     return candidate
+
+                if os.path.isdir(candidate):
+                    candidate_file = os.path.join(candidate, "sudoku.csv")
+                    if os.path.isfile(candidate_file):
+                        return candidate_file
+
     return DEFAULT_LIST_PATH
 
 
